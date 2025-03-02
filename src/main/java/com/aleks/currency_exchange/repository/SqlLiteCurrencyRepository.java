@@ -11,14 +11,18 @@ import java.util.Optional;
 public class SqlLiteCurrencyRepository implements CurrencyRepository {
     private Connection connection;
 
-    private void initConnection() throws ClassNotFoundException, SQLException {
-        Class.forName("org.sqlite.JDBC");
-        String url = "jdbc:sqlite:/home/aleksei/java/projects/currency_exchange/db/currency_db";
-        connection = DriverManager.getConnection(url);
+    private void initConnection() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            String url = "jdbc:sqlite:/home/aleksei/java/projects/currency_exchange/db/currency_db";
+            connection = DriverManager.getConnection(url);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     @Override
-    public Collection<Currency> findAll() throws SQLException, ClassNotFoundException {
+    public Collection<Currency> findAll() {
         initConnection();
         List<Currency> currencies = new ArrayList<>();
         String sql = "SELECT * FROM currencies";
@@ -26,12 +30,13 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
                     currencies.add(new Currency(
-                            resultSet.getInt("id"),
                             resultSet.getString("code"),
                             resultSet.getString("full_name"),
                             resultSet.getString("sign")
                     ));
                 }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -40,9 +45,9 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
     }
 
     @Override
-    public Optional<Currency> findByCode(String code) throws SQLException, ClassNotFoundException {
+    public Optional<Currency> findByCode(String code) {
         initConnection();
-        Currency currency = new Currency();
+        Currency currency = null;
         String sql = "SELECT * FROM currencies WHERE code = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, code);
@@ -51,17 +56,18 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
                 throw new IllegalArgumentException("Currency with id not found!");
             }
             currency = new Currency(
-                    resultSet.getInt("id"),
                     resultSet.getString("code"),
                     resultSet.getString("full_name"),
                     resultSet.getString("sign")
             );
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return Optional.ofNullable(currency);
     }
 
     @Override
-    public Optional<Currency> save(Currency currency) throws SQLException, ClassNotFoundException {
+    public Optional<Currency> save(Currency currency) {
         initConnection();
         String sql = "INSERT INTO currencies(code, full_name, sign) VALUES (?, ?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -81,13 +87,15 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
     }
 
     @Override
-    public boolean deleteByCode(String code) throws SQLException, ClassNotFoundException {
+    public boolean deleteByCode(String code) {
         initConnection();
-        boolean isDeleted;
+        boolean isDeleted = false;
         String sql = "DELETE FROM currencies WHERE code = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, code);
             isDeleted = preparedStatement.execute();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return isDeleted;
     }
