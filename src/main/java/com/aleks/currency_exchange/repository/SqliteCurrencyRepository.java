@@ -8,14 +8,29 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public class SqlLiteCurrencyRepository implements CurrencyRepository {
+public class SqliteCurrencyRepository implements CurrencyRepository {
     private Connection connection;
+    private static final String JDBC_NAME = "org.sqlite.JDBC";
+    private static final String URL = "jdbc:sqlite:db/currencies.db";
+
+    public SqliteCurrencyRepository() {
+        initConnection();
+    }
 
     private void initConnection() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            String url = "jdbc:sqlite:/home/aleksei/java/projects/currency_exchange/db/currency_db";
-            connection = DriverManager.getConnection(url);
+            Class.forName(JDBC_NAME);
+            connection = DriverManager.getConnection(URL);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void closeConnection() {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -25,21 +40,21 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
     public Collection<Currency> findAll() {
         initConnection();
         List<Currency> currencies = new ArrayList<>();
-        String sql = "SELECT * FROM currencies";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT id, code, full_name, sign FROM currencies")) {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
                     currencies.add(new Currency(
+                            resultSet.getInt("id"),
                             resultSet.getString("code"),
                             resultSet.getString("full_name"),
                             resultSet.getString("sign")
                     ));
                 }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            closeConnection();
         }
         return currencies;
     }
@@ -47,23 +62,25 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
     @Override
     public Optional<Currency> findByCode(String code) {
         initConnection();
-        Currency currency = null;
-        String sql = "SELECT * FROM currencies WHERE code = ?";
+        Optional<Currency> currency = Optional.empty();
+        String sql = "SELECT id, code, full_name, sign FROM currencies WHERE code = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, code);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if (!resultSet.next()) {
-                throw new IllegalArgumentException("Currency with id not found!");
+            if (resultSet.next()) {
+                currency = Optional.ofNullable(new Currency(
+                        resultSet.getInt("id"),
+                        resultSet.getString("code"),
+                        resultSet.getString("full_name"),
+                        resultSet.getString("sign")
+                ));
             }
-            currency = new Currency(
-                    resultSet.getString("code"),
-                    resultSet.getString("full_name"),
-                    resultSet.getString("sign")
-            );
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            closeConnection();
         }
-        return Optional.ofNullable(currency);
+        return currency;
     }
 
     @Override
@@ -80,23 +97,11 @@ public class SqlLiteCurrencyRepository implements CurrencyRepository {
                     currency.setId(generatedKeys.getInt(1));
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.ofNullable(currency);
-    }
-
-    @Override
-    public boolean deleteByCode(String code) {
-        initConnection();
-        boolean isDeleted = false;
-        String sql = "DELETE FROM currencies WHERE code = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, code);
-            isDeleted = preparedStatement.execute();
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            closeConnection();
         }
-        return isDeleted;
+        return Optional.ofNullable(currency);
     }
 }
