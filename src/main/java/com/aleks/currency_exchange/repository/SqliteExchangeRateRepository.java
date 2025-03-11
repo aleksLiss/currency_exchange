@@ -15,7 +15,7 @@ public class SqliteExchangeRateRepository implements ExchangeRateRepository {
 
     private Connection connection;
     private static final String JDBC_NAME = "org.sqlite.JDBC";
-    private static final String URL = "jdbc:sqlite:jdbc:sqlite:/home/aleksei/java/projects/currency_exchange/db/currencies.db";
+    private static final String URL = "jdbc:sqlite:/home/aleksei/java/projects/currency_exchange/db/currencies.db";
 
     public SqliteExchangeRateRepository() {
         initConnection();

@@ -66,14 +66,18 @@ public class SqliteCurrencyRepository implements CurrencyRepository {
         String sql = "SELECT id, code, full_name, sign FROM currencies WHERE code = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, code);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                currency = Optional.ofNullable(new Currency(
-                        resultSet.getInt("id"),
-                        resultSet.getString("code"),
-                        resultSet.getString("full_name"),
-                        resultSet.getString("sign")
-                ));
+            try {
+                ResultSet resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()) {
+                    currency = Optional.ofNullable(new Currency(
+                            resultSet.getInt("id"),
+                            resultSet.getString("code"),
+                            resultSet.getString("full_name"),
+                            resultSet.getString("sign")
+                    ));
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
