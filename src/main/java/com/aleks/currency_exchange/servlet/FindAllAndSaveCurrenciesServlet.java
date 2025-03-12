@@ -4,6 +4,8 @@ import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.repository.CurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
+import com.aleks.currency_exchange.templater.Templater;
+import com.aleks.currency_exchange.validator.Validator;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,12 +15,13 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 // http://localhost:8080/currency_exchange/currencies
 
 @WebServlet("/currencies")
-public class FindAllOrSaveCurrenciesServlet extends HttpServlet {
+public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Templater, Validator {
 
     private CurrencyService currencyService;
     private CurrencyRepository currencyRepository;
@@ -34,14 +37,12 @@ public class FindAllOrSaveCurrenciesServlet extends HttpServlet {
         try (PrintWriter writer = resp.getWriter()) {
             try {
                 resp.setContentType("text/html;encoding=utf-8");
-                writer.println("<html><body>");
                 Collection<Currency> currencies = currencyService.findAll();
                 if (currencies.isEmpty()) {
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Currencies not found");
                     return;
                 }
-                writer.println(new GsonBuilder().create().toJson(currencies));
-                writer.println("</body></html>");
+                writer.println(getTemplate(new GsonBuilder().create().toJson(currencies)));
             } catch (Exception ex) {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error");
             }
@@ -58,9 +59,8 @@ public class FindAllOrSaveCurrenciesServlet extends HttpServlet {
                 String code = req.getParameter("code");
                 String name = req.getParameter("name");
                 String sign = req.getParameter("sign");
-                if (code == null || code.isEmpty() ||
-                        name == null || name.isEmpty() ||
-                        sign == null || sign.isEmpty()) {
+                Map<String, String> parameters = Map.of("code", code, "name", name, "sign", sign);
+                if (!isValidParameters(parameters)) {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Fields: 'name', 'code', 'sign' must be not empty");
                     return;
                 }
@@ -68,19 +68,38 @@ public class FindAllOrSaveCurrenciesServlet extends HttpServlet {
                     resp.sendError(HttpServletResponse.SC_CONFLICT, "This currency already exist");
                     return;
                 }
-                final Currency gotCurrency = new Currency(code, name, sign);
-                Optional<Currency> savedCurrency = currencyService.save(gotCurrency);
-                if (savedCurrency.isPresent()) {
-                    writer.println(new GsonBuilder().create().toJson(savedCurrency.get()));
-                } else {
+                Optional<Currency> savedCurrency = currencyService.save(new Currency(code, name, sign));
+                if (!savedCurrency.isPresent()) {
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error save currency into database");
+                    return;
                 }
+                writer.println(getTemplate(new GsonBuilder().create().toJson(savedCurrency.get())));
             } catch (Exception ex) {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Data base not accessed");
-                ex.printStackTrace();
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Incorrect fields of parameters");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    @Override
+    public String getTemplate(String json) {
+        return "<html><body>" +
+                json +
+                "</body></html>";
+    }
+
+    @Override
+    public boolean isValidParameters(Map<String, String> parameters) {
+        String code = parameters.getOrDefault("code", null);
+        String name = parameters.getOrDefault("name", null);
+        String sign = parameters.getOrDefault("sign", null);
+        boolean isValid = true;
+        if (code == null || code.isEmpty() ||
+                name == null || name.isEmpty() ||
+                sign == null || sign.isEmpty()) {
+            isValid = false;
+        }
+        return isValid;
     }
 }

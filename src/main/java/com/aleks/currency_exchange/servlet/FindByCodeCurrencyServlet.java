@@ -32,18 +32,23 @@ public class FindByCodeCurrencyServlet extends HttpServlet implements Templater 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
-            resp.setContentType("text/html;encoding=utf-8");
-            String pathInfo = req.getPathInfo();
-            if (pathInfo.split("/").length < 1) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Currency field must contains codeCurrency");
-            } else {
+            try {
+                resp.setContentType("text/html;encoding=utf-8");
+                String pathInfo = req.getPathInfo();
+                if (pathInfo.split("/").length < 1) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Currency field must contains codeCurrency");
+                    return;
+                }
                 String codeCurrency = req.getPathInfo().split("/")[1].toUpperCase();
                 Optional<Currency> currency = currencyService.findByCode(codeCurrency);
-                if (currency.isPresent()) {
-                    writer.println(getTemplate(currency));
-                } else {
+                if (!currency.isPresent()) {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Currency not found");
+                    return;
                 }
+                writer.println(getTemplate(new GsonBuilder().create().toJson(currency.get())));
+            } catch (Exception ex) {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database not accessed");
+                ex.printStackTrace();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -51,14 +56,9 @@ public class FindByCodeCurrencyServlet extends HttpServlet implements Templater 
     }
 
     @Override
-    public String getTemplate(Optional<?> content) {
-        Optional<Currency> optionalCurrency = (Optional<Currency>) content;
-        StringBuilder builder = new StringBuilder();
-        return optionalCurrency.map(currency -> builder.append("<html><body>")
-                .append(new GsonBuilder().create().toJson(currency))
-                .append("</body></html>")
-                .toString()).orElseGet(() -> builder.append("<html><body>")
-                .append("[]")
-                .append("</body></html>").toString());
+    public String getTemplate(String content) {
+        return "<html><body>" +
+                content +
+                "</body></html>";
     }
 }
