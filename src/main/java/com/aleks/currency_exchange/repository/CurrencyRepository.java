@@ -12,4 +12,6 @@ public interface CurrencyRepository {
     Optional<Currency> findByCode(String code);
 
     Optional<Currency> save(Currency currency);
+
+    Optional<Currency> findById(int id);
 }
