@@ -32,5 +32,9 @@ public class CurrencyService {
 
     ;
 
+    public Optional<Currency> findById(int id) {
+        return currencyRepository.findById(id);
+    };
+
 
 }
