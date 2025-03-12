@@ -9,6 +9,7 @@ import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
+import com.aleks.currency_exchange.templater.Templater;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,8 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.Optional;
 
+//      http://localhost:8080/currency_exchange/exchangeRate/usdeur
+//      http://localhost:8080/currency_exchange/exchangeRate/usereur?rate=1000.00
+
 @WebServlet("/exchangeRate/*")
-public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
+public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implements Templater {
 
     private ExchangeRateRepository exchangeRateRepository;
     private ExchangeRateService exchangeRateService;
@@ -35,15 +39,11 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
         currencyService = new CurrencyService(currencyRepository);
     }
 
-    //      http://localhost:8080/currency_exchange/exchangeRate/usdeur
-    //      http://localhost:8080/currency_exchange/exchangeRate/usereur?rate=1000.00
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
                 resp.setContentType("text/html;encoding=utf-8");
-                writer.println("<html><body>");
                 String path = req.getPathInfo();
                 if (path.isEmpty()) {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Exchange rate field must contains two code of currencies");
@@ -60,18 +60,17 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
                 if (!exchangeRate.isPresent()) {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found");
                     return;
-                };
-                ExchangeRateMapper mapper = new ExchangeRateMapper(
+                }
+                ;
+                ExchangeRateMapper exchangeRateMapper = new ExchangeRateMapper(
                         exchangeRate.get().getId(),
                         baseCurrency.get(),
                         targetCurrency.get(),
                         exchangeRate.get().getRate()
                 );
-                writer.println(new GsonBuilder().create().toJson(mapper));
+                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateMapper)));
             } catch (Exception exception) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Exchange rate field must contains two code of currencies");
-            } finally {
-                writer.println("</body></html>");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -91,30 +90,63 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
         try (PrintWriter writer = resp.getWriter()) {
             resp.setContentType("text/html;encoding=utf-8");
             try {
-                writer.println("<html><body>");
                 String path = req.getPathInfo();
                 String[] arrOfPath = path.split("/");
+                String rate = req.getParameter("rate");
+                if (arrOfPath.length == 0) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Empty codes of currencies");
+                    return;
+                }
+                if (rate == null || rate.isEmpty()) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Empty field 'rate'");
+                    return;
+                }
                 String codesOfCurrencies = arrOfPath[1];
                 String codeOfBaseCurrency = codesOfCurrencies.substring(0, 3).toUpperCase();
                 String codeOfTargetCurrency = codesOfCurrencies.substring(3).toUpperCase();
-                Optional<Currency> baseCurrency = currencyService.findByCode(codeOfBaseCurrency);
+                Optional<Currency> baseCurrency = currencyService.findByCode(codeOfBaseCurrency);   // empty
                 Optional<Currency> targetCurrency = currencyService.findByCode(codeOfTargetCurrency);
-                Optional<ExchangeRate> foundExchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
-                writer.println(exchangeRateService.update(
+                if (!baseCurrency.isPresent() || !targetCurrency.isPresent()) {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Base or target currency not found");
+                    return;
+                }
+                Optional<ExchangeRate> foundExchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId()); // empty
+                if (!foundExchangeRate.isPresent()) {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found");
+                    return;
+                }
+                boolean isUpdated = exchangeRateService.update(
                         new ExchangeRate(
                                 foundExchangeRate.get().getId(),
                                 baseCurrency.get().getId(),
                                 targetCurrency.get().getId(),
                                 Double.parseDouble(req.getParameter("rate"))
                         )
-                ));
-                writer.println(new GsonBuilder().create().toJson(exchangeRateService.findAll()));
-                writer.println("</body></html>");
+                );
+                if (!isUpdated) {
+                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error update exchange rate");
+                    return;
+                }
+                Optional<ExchangeRate> updatedExchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
+                ExchangeRateMapper mapper = new ExchangeRateMapper(
+                        updatedExchangeRate.get().getId(),
+                        baseCurrency.get(),
+                        targetCurrency.get(),
+                        updatedExchangeRate.get().getRate()
+                );
+                writer.println(getTemplate(new GsonBuilder().create().toJson(mapper)));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String getTemplate(String content) {
+        return "<html><body>" +
+                content +
+                "</body></html>";
     }
 }
