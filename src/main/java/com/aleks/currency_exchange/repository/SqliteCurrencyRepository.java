@@ -11,7 +11,7 @@ import java.util.Optional;
 public class SqliteCurrencyRepository implements CurrencyRepository {
     private Connection connection;
     private static final String JDBC_NAME = "org.sqlite.JDBC";
-    private static final String URL = "jdbc:sqlite:/home/aleksei/java/projects/currency_exchange/db/currencies.db";
+    private static final String URL = "jdbc:sqlite:/home/aleks/java/projects/currency_exchange/db/currencies.db";
 
     public SqliteCurrencyRepository() {
         initConnection();
@@ -107,5 +107,33 @@ public class SqliteCurrencyRepository implements CurrencyRepository {
             closeConnection();
         }
         return Optional.ofNullable(currency);
+    }
+
+    @Override
+    public Optional<Currency> findById(int id) {
+        initConnection();
+        Optional<Currency> foundCurrency = Optional.empty();
+        String sql = "SELECT id, code, full_name, sign FROM currencies WHERE id = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setInt(1, id);
+            try {
+                ResultSet resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()) {
+                    foundCurrency = Optional.ofNullable(
+                            new Currency(
+                                    resultSet.getInt("id"),
+                                    resultSet.getString("code"),
+                                    resultSet.getString("full_name"),
+                                    resultSet.getString("sign")
+                            )
+                    );
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return foundCurrency;
     }
 }
