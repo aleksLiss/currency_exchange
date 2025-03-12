@@ -9,6 +9,8 @@ import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
+import com.aleks.currency_exchange.templater.Templater;
+import com.aleks.currency_exchange.validator.Validator;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,11 +19,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
 
 @WebServlet("/exchangeRates")
-public class FindAllExchangeRatesServlet extends HttpServlet {
+public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements Templater, Validator {
 
     private ExchangeRateService exchangeRateService;
     private ExchangeRateRepository exchangeRateRepository;
@@ -42,18 +43,30 @@ public class FindAllExchangeRatesServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             resp.setContentType("text/html;encoding=utf-8");
-            writer.println("<html><body>");
             try {
                 Collection<ExchangeRate> exchangeRates = exchangeRateService.findAll();
                 if (exchangeRates.isEmpty()) {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rates not found");
                     return;
                 }
-                writer.println(new GsonBuilder().create().toJson(exchangeRates));
+                List<ExchangeRateMapper> exchangeRateMappers = new ArrayList<>();
+                exchangeRates.forEach(exchangeRate -> {
+                    Optional<Currency> foundBaseCurr = currencyService.findById(exchangeRate.getBaseCurrencyId());
+                    Optional<Currency> foundTargCurr = currencyService.findById(exchangeRate.getTargetCurrencyId());
+                    if (foundBaseCurr.isPresent() && foundTargCurr.isPresent()) {
+                        exchangeRateMappers.add(
+                                new ExchangeRateMapper(
+                                        exchangeRate.getId(),
+                                        currencyService.findById(exchangeRate.getBaseCurrencyId()).get(),
+                                        currencyService.findById(exchangeRate.getTargetCurrencyId()).get(),
+                                        exchangeRate.getRate()
+                                )
+                        );
+                    }
+                });
+                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateMappers)));
             } catch (Exception ex) {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error");
-            } finally {
-                writer.println("</body></html>");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -63,15 +76,16 @@ public class FindAllExchangeRatesServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
-            resp.setContentType("text/html;encoding=utf-8");
-            writer.println("<html><body>");
             try {
+                resp.setContentType("text/html;encoding=utf-8");
                 String baseCurrencyCode = req.getParameter("baseCurrencyCode");
                 String targetCurrencyCode = req.getParameter("targetCurrencyCode");
                 String rate = req.getParameter("rate");
-                if ((baseCurrencyCode == null || baseCurrencyCode.isEmpty()) ||
-                        (targetCurrencyCode == null || targetCurrencyCode.isEmpty()) ||
-                        (rate == null || rate.isEmpty())) {
+                Map<String, String> parameters = Map.of(
+                        "baseCurrencyCode", baseCurrencyCode,
+                        "targetCurrencyCode", targetCurrencyCode,
+                        "rate", rate);
+                if (!isValidParameters(parameters)) {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Fields: 'baseCurrencyCode', 'targetCurrencyCode', 'rate' must be not empty");
                     return;
                 }
@@ -94,24 +108,43 @@ public class FindAllExchangeRatesServlet extends HttpServlet {
                                 foundTargetCurrency.get().getId(),
                                 Double.parseDouble(rate))
                 );
-                if (savedExchangeRate.isPresent()) {
-                    ExchangeRateMapper mapper = new ExchangeRateMapper(
-                            savedExchangeRate.get().getId(),
-                            foundBaseCurrency.get(),
-                            foundTargetCurrency.get(),
-                            savedExchangeRate.get().getRate()
-                            );
-                    writer.println(new GsonBuilder().create().toJson(mapper));
-                } else {
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error save new exchange rate into database");
+                if (!savedExchangeRate.isPresent()) {
+                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error save exchange rate into database");
+                    return;
                 }
+                ExchangeRateMapper mapper = new ExchangeRateMapper(
+                        savedExchangeRate.get().getId(),
+                        foundBaseCurrency.get(),
+                        foundTargetCurrency.get(),
+                        savedExchangeRate.get().getRate()
+                );
+                writer.println(getTemplate(new GsonBuilder().create().toJson(mapper)));
             } catch (Exception ex) {
-                ex.printStackTrace();
-            } finally {
-                writer.println("</body></html>");
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Incorrect fields of parameters");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    @Override
+    public String getTemplate(String content) {
+        return "<html><body>" +
+                content +
+                "</body></html>";
+    }
+
+    @Override
+    public boolean isValidParameters(Map<String, String> parameters) {
+        String baseCurrencyCode = parameters.getOrDefault("baseCurrencyCode", null);
+        String targetCurrencyCode = parameters.getOrDefault("targetCurrencyCode", null);
+        String rate = parameters.getOrDefault("rate", null);
+        boolean isValid = true;
+        if (baseCurrencyCode == null || baseCurrencyCode.isEmpty() ||
+                targetCurrencyCode == null || targetCurrencyCode.isEmpty() ||
+                rate == null || rate.isEmpty()) {
+            isValid = false;
+        }
+        return isValid;
     }
 }
