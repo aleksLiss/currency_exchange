@@ -14,9 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 // http://localhost:8080/currency_exchange/currencies
 
@@ -55,15 +53,14 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Temp
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("text/html;charset=utf-8");
-                String code = req.getParameter("code");
-                String name = req.getParameter("name");
-                String sign = req.getParameter("sign");
-                Map<String, String> parameters = Map.of("code", code, "name", name, "sign", sign);
-                if (!isValidParameters(parameters)) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Fields: 'name', 'code', 'sign' must be not empty");
+                Map<String, String> parametersMap = getPararametersAsMap(req);
+                if (!isValidParameters(parametersMap)) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Fields: 'name', 'code', 'sign' must be not empty and must be correct");
                     return;
                 }
+                String code = parametersMap.getOrDefault("code", null);
+                String name = parametersMap.getOrDefault("name", null);
+                String sign = parametersMap.getOrDefault("sign", null);
                 if (currencyService.findByCode(code).isPresent()) {
                     resp.sendError(HttpServletResponse.SC_CONFLICT, "This currency already exist");
                     return;
@@ -75,7 +72,7 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Temp
                 }
                 writer.println(getTemplate(new GsonBuilder().create().toJson(savedCurrency.get())));
             } catch (Exception ex) {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Incorrect fields of parameters");
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -101,5 +98,13 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Temp
             isValid = false;
         }
         return isValid;
+    }
+
+    private Map<String, String> getPararametersAsMap(HttpServletRequest request) {
+        Map<String, String> parameters = new HashMap<>();
+        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+            parameters.put(entry.getKey(), entry.getValue()[0]);
+        }
+        return parameters;
     }
 }
