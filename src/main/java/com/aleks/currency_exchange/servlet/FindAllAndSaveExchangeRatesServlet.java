@@ -21,6 +21,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.*;
 
+// http://localhost:8080/currency_exchange/exchangeRates
+
 @WebServlet("/exchangeRates")
 public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements Templater, Validator {
 
@@ -36,8 +38,6 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
         exchangeRateRepository = new SqliteExchangeRateRepository();
         exchangeRateService = new ExchangeRateService(exchangeRateRepository);
     }
-
-    // http://localhost:8080/currency_exchange/exchangeRates
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
@@ -78,17 +78,15 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
         try (PrintWriter writer = resp.getWriter()) {
             try {
                 resp.setContentType("text/html;encoding=utf-8");
-                String baseCurrencyCode = req.getParameter("baseCurrencyCode");
-                String targetCurrencyCode = req.getParameter("targetCurrencyCode");
-                String rate = req.getParameter("rate");
-                Map<String, String> parameters = Map.of(
-                        "baseCurrencyCode", baseCurrencyCode,
-                        "targetCurrencyCode", targetCurrencyCode,
-                        "rate", rate);
+                Map<String, String> parameters = getParametersAsMap(req);
                 if (!isValidParameters(parameters)) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Fields: 'baseCurrencyCode', 'targetCurrencyCode', 'rate' must be not empty");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                            "Fields: 'baseCurrencyCode', 'targetCurrencyCode', 'rate' must be not empty and must be correct");
                     return;
                 }
+                String baseCurrencyCode = parameters.getOrDefault("targetCurrencyCode", null);
+                String targetCurrencyCode = parameters.getOrDefault("targetCurrencyCode", null);
+                String rate = parameters.getOrDefault("rate", null);
                 Optional<Currency> foundBaseCurrency = currencyService.findByCode(baseCurrencyCode.toUpperCase());
                 Optional<Currency> foundTargetCurrency = currencyService.findByCode(targetCurrencyCode.toUpperCase());
                 if (!foundTargetCurrency.isPresent() || !foundBaseCurrency.isPresent()) {
@@ -146,5 +144,13 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
             isValid = false;
         }
         return isValid;
+    }
+
+    private Map<String, String> getParametersAsMap(HttpServletRequest request) {
+        Map<String, String> parameters = new HashMap<>();
+        for(Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+            parameters.put(entry.getKey(), entry.getValue()[0]);
+        }
+        return parameters;
     }
 }
