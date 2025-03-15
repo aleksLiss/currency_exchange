@@ -1,6 +1,6 @@
 package com.aleks.currency_exchange.servlet;
 
-import com.aleks.currency_exchange.mapper.ExchangeRateMapper;
+import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
 import com.aleks.currency_exchange.repository.CurrencyRepository;
@@ -62,13 +62,13 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
                     return;
                 }
                 ;
-                ExchangeRateMapper exchangeRateMapper = new ExchangeRateMapper(
+                ExchangeRateView exchangeRateView = new ExchangeRateView(
                         exchangeRate.get().getId(),
                         baseCurrency.get(),
                         targetCurrency.get(),
                         exchangeRate.get().getRate()
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateMapper)));
+                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateView)));
             } catch (Exception exception) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Exchange rate field must contains two code of currencies");
             }
@@ -128,13 +128,13 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
                     return;
                 }
                 Optional<ExchangeRate> updatedExchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
-                ExchangeRateMapper mapper = new ExchangeRateMapper(
+                ExchangeRateView exchangeRateView = new ExchangeRateView(
                         updatedExchangeRate.get().getId(),
                         baseCurrency.get(),
                         targetCurrency.get(),
                         updatedExchangeRate.get().getRate()
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(mapper)));
+                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateView)));
             } catch (Exception e) {
                 e.printStackTrace();
             }

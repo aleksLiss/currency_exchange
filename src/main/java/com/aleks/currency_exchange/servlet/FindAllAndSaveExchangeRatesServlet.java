@@ -1,6 +1,6 @@
 package com.aleks.currency_exchange.servlet;
 
-import com.aleks.currency_exchange.mapper.ExchangeRateMapper;
+import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
 import com.aleks.currency_exchange.repository.CurrencyRepository;
@@ -49,13 +49,13 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rates not found");
                     return;
                 }
-                List<ExchangeRateMapper> exchangeRateMappers = new ArrayList<>();
+                List<ExchangeRateView> exchangeRateViews = new ArrayList<>();
                 exchangeRates.forEach(exchangeRate -> {
                     Optional<Currency> foundBaseCurr = currencyService.findById(exchangeRate.getBaseCurrencyId());
                     Optional<Currency> foundTargCurr = currencyService.findById(exchangeRate.getTargetCurrencyId());
                     if (foundBaseCurr.isPresent() && foundTargCurr.isPresent()) {
-                        exchangeRateMappers.add(
-                                new ExchangeRateMapper(
+                        exchangeRateViews.add(
+                                new ExchangeRateView(
                                         exchangeRate.getId(),
                                         currencyService.findById(exchangeRate.getBaseCurrencyId()).get(),
                                         currencyService.findById(exchangeRate.getTargetCurrencyId()).get(),
@@ -64,7 +64,7 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                         );
                     }
                 });
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateMappers)));
+                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateViews)));
             } catch (Exception ex) {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error");
             }
@@ -110,13 +110,13 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error save exchange rate into database");
                     return;
                 }
-                ExchangeRateMapper mapper = new ExchangeRateMapper(
+                ExchangeRateView exchangeRateView = new ExchangeRateView(
                         savedExchangeRate.get().getId(),
                         foundBaseCurrency.get(),
                         foundTargetCurrency.get(),
                         savedExchangeRate.get().getRate()
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(mapper)));
+                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateView)));
             } catch (Exception ex) {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Incorrect fields of parameters");
             }
