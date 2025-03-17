@@ -9,4 +9,11 @@ public class ExceptionView {
     public ExceptionView(String message) {
         this.message = message;
     }
+
+    public ExceptionView() {
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }

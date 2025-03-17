@@ -1,6 +1,5 @@
 package com.aleks.currency_exchange.servlet;
 
-import com.aleks.currency_exchange.exception.ExchangeException;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeView;
 import com.aleks.currency_exchange.model.Currency;
@@ -11,7 +10,6 @@ import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
-import com.aleks.currency_exchange.templater.Templater;
 import com.aleks.currency_exchange.validator.Validator;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
@@ -26,12 +24,13 @@ import java.util.Map;
 import java.util.Optional;
 
 @WebServlet("/exchange")
-public class ExchangeServlet extends HttpServlet implements Validator, Templater {
+public class ExchangeServlet extends HttpServlet implements Validator {
 
     private ExchangeRateRepository exchangeRateRepository;
     private static ExchangeRateService exchangeRateService;
     private static CurrencyRepository currencyRepository;
     private CurrencyService currencyService;
+    private ExceptionView exceptionView;
 
     // todo review GET /exchange?from=BASE_CURRENCY_CODE&to=TARGET_CURRENCY_CODE&amount=$AMOUNT #
     // todo deploy
@@ -48,19 +47,17 @@ public class ExchangeServlet extends HttpServlet implements Validator, Templater
         exchangeRateService = new ExchangeRateService(exchangeRateRepository);
         currencyRepository = new SqliteCurrencyRepository();
         currencyService = new CurrencyService(currencyRepository);
+        exceptionView = new ExceptionView();
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("text/html;encoding=utf-8");
-                writer.println("<html><body>");
+                resp.setContentType("application/json;encoding=utf-8");
                 Map<String, String> parameters = getParametersAsMap(req);
                 if (!isValidParameters(parameters)) {
-                    ExceptionView exceptionView = new ExceptionView(
-                            "Fields: from, to, amount must be not empty and must be correct"
-                    );
+                    exceptionView.setMessage("Fields: from, to, amount must be not empty and must be correct");
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
                             new GsonBuilder().create().toJson(exceptionView)
                     );
@@ -72,9 +69,7 @@ public class ExchangeServlet extends HttpServlet implements Validator, Templater
                 Optional<Currency> baseCurrency = currencyService.findByCode(baseCodeCurr.toUpperCase());
                 Optional<Currency> targetCurrency = currencyService.findByCode(targetCodeCurr.toUpperCase());
                 if (!baseCurrency.isPresent() || !targetCurrency.isPresent()) {
-                    ExceptionView exceptionView = new ExceptionView(
-                            "Currencies with input codes not found"
-                    );
+                    exceptionView.setMessage("Currencies with input codes not found");
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
@@ -87,7 +82,7 @@ public class ExchangeServlet extends HttpServlet implements Validator, Templater
                             amount,
                             BigDecimal.valueOf(dirExRate.get().getRate() * amount)
                     );
-                    writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeView)));
+                    writer.println(new GsonBuilder().create().toJson(exchangeView));
                     return;
                 }
                 Optional<ExchangeRate> backExRate = exchangeRateService.findByCode(targetCurrency.get().getId(), baseCurrency.get().getId());
@@ -99,7 +94,7 @@ public class ExchangeServlet extends HttpServlet implements Validator, Templater
                             amount,
                             BigDecimal.valueOf(dirExRate.get().getRate() * amount)
                     );
-                    writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeView)));
+                    writer.println(new GsonBuilder().create().toJson(exchangeView));
                     return;
                 }
                 ExchangeRate[] exchangeRates = getTargetsCurrenciesId(baseCurrency.get().getId(), targetCurrency.get().getId());
@@ -111,7 +106,7 @@ public class ExchangeServlet extends HttpServlet implements Validator, Templater
                         amount,
                         BigDecimal.valueOf(dirExRate.get().getRate() * amount)
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeView)));
+                writer.println(new GsonBuilder().create().toJson(exchangeView));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -165,14 +160,5 @@ public class ExchangeServlet extends HttpServlet implements Validator, Templater
         );
         return parameters;
     }
-
-    @Override
-    public String getTemplate(String content) {
-        return "<html><body>" +
-                content +
-                "</body></html>";
-    }
-
-    ;
 }
 

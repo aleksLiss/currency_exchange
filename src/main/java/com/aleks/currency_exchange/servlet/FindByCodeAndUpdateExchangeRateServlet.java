@@ -1,5 +1,6 @@
 package com.aleks.currency_exchange.servlet;
 
+import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
@@ -9,7 +10,6 @@ import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
-import com.aleks.currency_exchange.templater.Templater;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -24,12 +24,13 @@ import java.util.Optional;
 //      http://localhost:8080/currency_exchange/exchangeRate/usereur?rate=1000.00
 
 @WebServlet("/exchangeRate/*")
-public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implements Templater {
+public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
 
     private ExchangeRateRepository exchangeRateRepository;
     private ExchangeRateService exchangeRateService;
     private CurrencyRepository currencyRepository;
     private CurrencyService currencyService;
+    private ExceptionView exceptionView;
 
     @Override
     public void init(ServletConfig config) {
@@ -37,28 +38,32 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
         exchangeRateService = new ExchangeRateService(exchangeRateRepository);
         currencyRepository = new SqliteCurrencyRepository();
         currencyService = new CurrencyService(currencyRepository);
+        exceptionView = new ExceptionView();
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("text/html;encoding=utf-8");
+                resp.setContentType("application/json;encoding=utf-8");
                 String path = req.getPathInfo();
                 if (path.isEmpty()) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Exchange rate field must contains two code of currencies");
+                    exceptionView.setMessage("Exchange rate field must contains two code of currencies");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 String[] codesBaseAndTargetCurrencies = getCodesCurrenciesFromPath(path);
                 Optional<Currency> baseCurrency = currencyService.findByCode(codesBaseAndTargetCurrencies[0]);
                 Optional<Currency> targetCurrency = currencyService.findByCode(codesBaseAndTargetCurrencies[1]);
                 if (!baseCurrency.isPresent() || !targetCurrency.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Currencies with input codes not found");
+                    exceptionView.setMessage("Currencies with input codes not found");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> exchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
                 if (!exchangeRate.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found");
+                    exceptionView.setMessage("Exchange rate not found");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 ;
@@ -68,9 +73,10 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
                         targetCurrency.get(),
                         exchangeRate.get().getRate()
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateView)));
+                writer.println(new GsonBuilder().create().toJson(exchangeRateView));
             } catch (Exception exception) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Exchange rate field must contains two code of currencies");
+                exceptionView.setMessage("Exchange rate field must contains two code of currencies");
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -88,17 +94,19 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
-            resp.setContentType("text/html;encoding=utf-8");
+            resp.setContentType("application/json;encoding=utf-8");
             try {
                 String path = req.getPathInfo();
                 String[] arrOfPath = path.split("/");
                 String rate = req.getParameter("rate");
                 if (arrOfPath.length == 0) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Empty codes of currencies");
+                    exceptionView.setMessage("Empty codes of currencies");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 if (rate == null || rate.isEmpty()) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Empty field 'rate'");
+                    exceptionView.setMessage("Empty field 'rate'");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 String codesOfCurrencies = arrOfPath[1];
@@ -107,12 +115,14 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
                 Optional<Currency> baseCurrency = currencyService.findByCode(codeOfBaseCurrency);   // empty
                 Optional<Currency> targetCurrency = currencyService.findByCode(codeOfTargetCurrency);
                 if (!baseCurrency.isPresent() || !targetCurrency.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Base or target currency not found");
+                    exceptionView.setMessage("Base or target currency not found");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> foundExchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId()); // empty
                 if (!foundExchangeRate.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rate not found");
+                    exceptionView.setMessage("Exchange rate not found");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 boolean isUpdated = exchangeRateService.update(
@@ -124,7 +134,8 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
                         )
                 );
                 if (!isUpdated) {
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error update exchange rate");
+                    exceptionView.setMessage("Error update exchange rate");
+                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> updatedExchangeRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
@@ -134,19 +145,12 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
                         targetCurrency.get(),
                         updatedExchangeRate.get().getRate()
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateView)));
+                writer.println(new GsonBuilder().create().toJson(exchangeRateView));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public String getTemplate(String content) {
-        return "<html><body>" +
-                content +
-                "</body></html>";
     }
 }
