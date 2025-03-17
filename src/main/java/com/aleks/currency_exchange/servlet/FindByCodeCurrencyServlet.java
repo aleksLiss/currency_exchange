@@ -34,7 +34,6 @@ public class FindByCodeCurrencyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("text/html;encoding=utf-8");
                 String pathInfo = req.getPathInfo();
                 if (pathInfo.split("/").length < 1) {
                     exceptionView.setMessage("Currency field must contains codeCurrency");

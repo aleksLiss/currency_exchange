@@ -45,7 +45,6 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("application/json;encoding=utf-8");
                 String path = req.getPathInfo();
                 if (path.isEmpty()) {
                     exceptionView.setMessage("Exchange rate field must contains two code of currencies");
@@ -94,7 +93,6 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
-            resp.setContentType("application/json;encoding=utf-8");
             try {
                 String path = req.getPathInfo();
                 String[] arrOfPath = path.split("/");

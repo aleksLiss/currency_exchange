@@ -54,7 +54,6 @@ public class ExchangeServlet extends HttpServlet implements Validator {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("application/json;encoding=utf-8");
                 Map<String, String> parameters = getParametersAsMap(req);
                 if (!isValidParameters(parameters)) {
                     exceptionView.setMessage("Fields: from, to, amount must be not empty and must be correct");
