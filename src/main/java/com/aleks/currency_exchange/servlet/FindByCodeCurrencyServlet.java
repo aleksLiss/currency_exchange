@@ -20,13 +20,12 @@ import java.util.Optional;
 @WebServlet("/currency/*")
 public class FindByCodeCurrencyServlet extends HttpServlet {
 
-    private CurrencyRepository currencyRepository;
     private CurrencyService currencyService;
     private ExceptionView exceptionView;
+
     @Override
     public void init(ServletConfig config) {
-        currencyRepository = new SqliteCurrencyRepository();
-        currencyService = new CurrencyService(currencyRepository);
+        currencyService = new CurrencyService(new SqliteCurrencyRepository());
         exceptionView = new ExceptionView();
     }
 

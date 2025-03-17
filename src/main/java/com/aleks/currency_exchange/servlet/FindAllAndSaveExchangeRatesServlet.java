@@ -27,17 +27,13 @@ import java.util.*;
 public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements Validator {
 
     private ExchangeRateService exchangeRateService;
-    private ExchangeRateRepository exchangeRateRepository;
     private CurrencyService currencyService;
-    private CurrencyRepository currencyRepository;
     private ExceptionView exceptionView;
 
     @Override
     public void init(ServletConfig config) {
-        currencyRepository = new SqliteCurrencyRepository();
-        currencyService = new CurrencyService(currencyRepository);
-        exchangeRateRepository = new SqliteExchangeRateRepository();
-        exchangeRateService = new ExchangeRateService(exchangeRateRepository);
+        currencyService = new CurrencyService(new SqliteCurrencyRepository());
+        exchangeRateService = new ExchangeRateService(new SqliteExchangeRateRepository());
         exceptionView = new ExceptionView();
     }
 

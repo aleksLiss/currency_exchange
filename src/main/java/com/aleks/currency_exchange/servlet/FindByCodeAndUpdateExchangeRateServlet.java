@@ -26,18 +26,14 @@ import java.util.Optional;
 @WebServlet("/exchangeRate/*")
 public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
 
-    private ExchangeRateRepository exchangeRateRepository;
     private ExchangeRateService exchangeRateService;
-    private CurrencyRepository currencyRepository;
     private CurrencyService currencyService;
     private ExceptionView exceptionView;
 
     @Override
     public void init(ServletConfig config) {
-        exchangeRateRepository = new SqliteExchangeRateRepository();
-        exchangeRateService = new ExchangeRateService(exchangeRateRepository);
-        currencyRepository = new SqliteCurrencyRepository();
-        currencyService = new CurrencyService(currencyRepository);
+        exchangeRateService = new ExchangeRateService(new SqliteExchangeRateRepository());
+        currencyService = new CurrencyService(new SqliteCurrencyRepository());
         exceptionView = new ExceptionView();
     }
 
