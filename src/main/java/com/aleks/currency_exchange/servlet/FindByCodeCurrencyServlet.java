@@ -4,7 +4,7 @@ import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.repository.CurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
-import com.aleks.currency_exchange.templater.Templater;
+import com.aleks.currency_exchange.view.ExceptionView;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -18,15 +18,16 @@ import java.util.Optional;
 // http://localhost:8080/currency_exchange/currency/USD
 
 @WebServlet("/currency/*")
-public class FindByCodeCurrencyServlet extends HttpServlet implements Templater {
+public class FindByCodeCurrencyServlet extends HttpServlet {
 
     private CurrencyRepository currencyRepository;
     private CurrencyService currencyService;
-
+    private ExceptionView exceptionView;
     @Override
     public void init(ServletConfig config) {
         currencyRepository = new SqliteCurrencyRepository();
         currencyService = new CurrencyService(currencyRepository);
+        exceptionView = new ExceptionView();
     }
 
     @Override
@@ -36,29 +37,25 @@ public class FindByCodeCurrencyServlet extends HttpServlet implements Templater 
                 resp.setContentType("text/html;encoding=utf-8");
                 String pathInfo = req.getPathInfo();
                 if (pathInfo.split("/").length < 1) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Currency field must contains codeCurrency");
+                    exceptionView.setMessage("Currency field must contains codeCurrency");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 String codeCurrency = req.getPathInfo().split("/")[1].toUpperCase();
                 Optional<Currency> currency = currencyService.findByCode(codeCurrency);
                 if (!currency.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Currency not found");
+                    exceptionView.setMessage("Currency not found");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
-                writer.println(getTemplate(new GsonBuilder().create().toJson(currency.get())));
+                writer.println(new GsonBuilder().create().toJson(currency.get()));
             } catch (Exception ex) {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database not accessed");
+                exceptionView.setMessage("Database not accessed");
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
                 ex.printStackTrace();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
-    @Override
-    public String getTemplate(String content) {
-        return "<html><body>" +
-                content +
-                "</body></html>";
     }
 }
