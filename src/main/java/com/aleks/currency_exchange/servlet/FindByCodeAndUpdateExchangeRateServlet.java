@@ -4,8 +4,6 @@ import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
-import com.aleks.currency_exchange.repository.CurrencyRepository;
-import com.aleks.currency_exchange.repository.ExchangeRateRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
@@ -18,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.Optional;
 
 //      http://localhost:8080/currency_exchange/exchangeRate/usdeur
@@ -124,7 +123,7 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
                                 foundExchangeRate.get().getId(),
                                 baseCurrency.get().getId(),
                                 targetCurrency.get().getId(),
-                                Double.parseDouble(req.getParameter("rate"))
+                                BigDecimal.valueOf(Double.parseDouble(rate))
                         )
                 );
                 if (!isUpdated) {
