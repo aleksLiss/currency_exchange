@@ -4,8 +4,6 @@ import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
-import com.aleks.currency_exchange.repository.CurrencyRepository;
-import com.aleks.currency_exchange.repository.ExchangeRateRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
@@ -19,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.*;
 
 // http://localhost:8080/currency_exchange/exchangeRates
@@ -105,8 +104,8 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements V
                         new ExchangeRate(
                                 foundBaseCurrency.get().getId(),
                                 foundTargetCurrency.get().getId(),
-                                Double.parseDouble(rate))
-                );
+                                BigDecimal.valueOf(Double.parseDouble(rate))
+                ));
                 if (!savedExchangeRate.isPresent()) {
                     exceptionView.setMessage("Error save exchange rate into database");
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));

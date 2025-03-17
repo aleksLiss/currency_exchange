@@ -8,11 +8,11 @@ public class ExchangeView {
 
     private Currency baseCurrency;
     private Currency targetCurrency;
-    private double rate;
+    private BigDecimal rate;
     private double amount;
-    private BigDecimal convertedAmount;
+    private double convertedAmount;
 
-    public ExchangeView(Currency baseCurrency, Currency targetCurrency, double rate, double amount, BigDecimal convertedAmount) {
+    public ExchangeView(Currency baseCurrency, Currency targetCurrency, BigDecimal rate, double amount, double convertedAmount) {
         this.baseCurrency = baseCurrency;
         this.targetCurrency = targetCurrency;
         this.rate = rate;
