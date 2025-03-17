@@ -1,5 +1,6 @@
 package com.aleks.currency_exchange.servlet;
 
+import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
@@ -9,7 +10,6 @@ import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
-import com.aleks.currency_exchange.templater.Templater;
 import com.aleks.currency_exchange.validator.Validator;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
@@ -24,12 +24,13 @@ import java.util.*;
 // http://localhost:8080/currency_exchange/exchangeRates
 
 @WebServlet("/exchangeRates")
-public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements Templater, Validator {
+public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements Validator {
 
     private ExchangeRateService exchangeRateService;
     private ExchangeRateRepository exchangeRateRepository;
     private CurrencyService currencyService;
     private CurrencyRepository currencyRepository;
+    private ExceptionView exceptionView;
 
     @Override
     public void init(ServletConfig config) {
@@ -37,16 +38,18 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
         currencyService = new CurrencyService(currencyRepository);
         exchangeRateRepository = new SqliteExchangeRateRepository();
         exchangeRateService = new ExchangeRateService(exchangeRateRepository);
+        exceptionView = new ExceptionView();
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
-            resp.setContentType("text/html;encoding=utf-8");
+            resp.setContentType("application/json;encoding=utf-8");
             try {
                 Collection<ExchangeRate> exchangeRates = exchangeRateService.findAll();
                 if (exchangeRates.isEmpty()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Exchange rates not found");
+                    exceptionView.setMessage("Exchange rates not found");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 List<ExchangeRateView> exchangeRateViews = new ArrayList<>();
@@ -64,9 +67,10 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                         );
                     }
                 });
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateViews)));
+                writer.println(new GsonBuilder().create().toJson(exchangeRateViews));
             } catch (Exception ex) {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error");
+                exceptionView.setMessage("Internal error");
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -77,11 +81,12 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("text/html;encoding=utf-8");
+                resp.setContentType("application/json;encoding=utf-8");
                 Map<String, String> parameters = getParametersAsMap(req);
                 if (!isValidParameters(parameters)) {
+                    exceptionView.setMessage("Fields: baseCurrencyCode, targetCurrencyCode, rate must be not empty and must be correct");
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            "Fields: 'baseCurrencyCode', 'targetCurrencyCode', 'rate' must be not empty and must be correct");
+                            new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 String baseCurrencyCode = parameters.getOrDefault("targetCurrencyCode", null);
@@ -90,14 +95,16 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                 Optional<Currency> foundBaseCurrency = currencyService.findByCode(baseCurrencyCode.toUpperCase());
                 Optional<Currency> foundTargetCurrency = currencyService.findByCode(targetCurrencyCode.toUpperCase());
                 if (!foundTargetCurrency.isPresent() || !foundBaseCurrency.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Base currency or target currency not found");
+                    exceptionView.setMessage("Base currency or target currency not found");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> foundExchangeRate = exchangeRateService.findByCode(
                         foundBaseCurrency.get().getId(),
                         foundTargetCurrency.get().getId());
                 if (foundExchangeRate.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, "Input exchange rate already exist");
+                    exceptionView.setMessage("Input exchange rate already exist");
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> savedExchangeRate = exchangeRateService.save(
@@ -107,7 +114,8 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                                 Double.parseDouble(rate))
                 );
                 if (!savedExchangeRate.isPresent()) {
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error save exchange rate into database");
+                    exceptionView.setMessage("Error save exchange rate into database");
+                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 ExchangeRateView exchangeRateView = new ExchangeRateView(
@@ -116,20 +124,15 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements T
                         foundTargetCurrency.get(),
                         savedExchangeRate.get().getRate()
                 );
-                writer.println(getTemplate(new GsonBuilder().create().toJson(exchangeRateView)));
+
+                writer.println(new GsonBuilder().create().toJson(exchangeRateView));
             } catch (Exception ex) {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Incorrect fields of parameters");
+                exceptionView.setMessage("Incorrect fields of parameters");
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
-    @Override
-    public String getTemplate(String content) {
-        return "<html><body>" +
-                content +
-                "</body></html>";
     }
 
     @Override
