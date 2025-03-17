@@ -4,8 +4,6 @@ import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeView;
 import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.model.ExchangeRate;
-import com.aleks.currency_exchange.repository.CurrencyRepository;
-import com.aleks.currency_exchange.repository.ExchangeRateRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
@@ -33,9 +31,6 @@ public class ExchangeServlet extends HttpServlet implements Validator {
     // todo review GET /exchange?from=BASE_CURRENCY_CODE&to=TARGET_CURRENCY_CODE&amount=$AMOUNT #
     // todo deploy
     // todo добавить проверку на отрицательные значения валюты
-    // todo изменить на бигдецимал в модели валюты
-    // todo удалить переменные репозиториев из сервлетов
-    // todo  удалить templater
 
     @Override
     public void init(ServletConfig config) {
@@ -69,11 +64,11 @@ public class ExchangeServlet extends HttpServlet implements Validator {
                 Optional<ExchangeRate> dirExRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
                 if (dirExRate.isPresent()) {
                     ExchangeView exchangeView = new ExchangeView(
-                            baseCurrency.get(),
-                            targetCurrency.get(),
-                            dirExRate.get().getRate(),
-                            amount,
-                            BigDecimal.valueOf(dirExRate.get().getRate() * amount)
+                        baseCurrency.get(),
+                        targetCurrency.get(),
+                        dirExRate.get().getRate(),
+                        amount,
+                        dirExRate.get().getRate().doubleValue() * amount
                     );
                     writer.println(new GsonBuilder().create().toJson(exchangeView));
                     return;
@@ -85,19 +80,19 @@ public class ExchangeServlet extends HttpServlet implements Validator {
                             baseCurrency.get(),
                             backExRate.get().getRate(),
                             amount,
-                            BigDecimal.valueOf(dirExRate.get().getRate() * amount)
+                            dirExRate.get().getRate().doubleValue() * amount
                     );
                     writer.println(new GsonBuilder().create().toJson(exchangeView));
                     return;
                 }
                 ExchangeRate[] exchangeRates = getTargetsCurrenciesId(baseCurrency.get().getId(), targetCurrency.get().getId());
-                double rate = (exchangeRates[1].getRate() / exchangeRates[0].getRate());
+                BigDecimal rate = exchangeRates[1].getRate().divide(exchangeRates[0].getRate());
                 ExchangeView exchangeView = new ExchangeView(
                         baseCurrency.get(),
                         targetCurrency.get(),
                         rate,
                         amount,
-                        BigDecimal.valueOf(dirExRate.get().getRate() * amount)
+                        dirExRate.get().getRate().doubleValue() * amount
                 );
                 writer.println(new GsonBuilder().create().toJson(exchangeView));
             } catch (Exception ex) {
