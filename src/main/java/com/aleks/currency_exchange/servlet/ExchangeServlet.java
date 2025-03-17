@@ -26,27 +26,21 @@ import java.util.Optional;
 @WebServlet("/exchange")
 public class ExchangeServlet extends HttpServlet implements Validator {
 
-    private ExchangeRateRepository exchangeRateRepository;
-    private static ExchangeRateService exchangeRateService;
-    private static CurrencyRepository currencyRepository;
+    private ExchangeRateService exchangeRateService;
     private CurrencyService currencyService;
     private ExceptionView exceptionView;
 
     // todo review GET /exchange?from=BASE_CURRENCY_CODE&to=TARGET_CURRENCY_CODE&amount=$AMOUNT #
     // todo deploy
-    // todo добавить проверку на отрицательные значения курса
-    // todo изменить на бигдецимал
-    // todo погуглить другие варинаты ошибок (проекты других учеников в чате и ревью на них)
-    // todo  переделать для всех запрос ответы просто строкой gson ответы
-    // todo добавить кастомные эксепшены
-
+    // todo добавить проверку на отрицательные значения валюты
+    // todo изменить на бигдецимал в модели валюты
+    // todo удалить переменные репозиториев из сервлетов
+    // todo  удалить templater
 
     @Override
     public void init(ServletConfig config) {
-        exchangeRateRepository = new SqliteExchangeRateRepository();
-        exchangeRateService = new ExchangeRateService(exchangeRateRepository);
-        currencyRepository = new SqliteCurrencyRepository();
-        currencyService = new CurrencyService(currencyRepository);
+        exchangeRateService = new ExchangeRateService(new SqliteExchangeRateRepository());
+        currencyService = new CurrencyService(new SqliteCurrencyRepository());
         exceptionView = new ExceptionView();
     }
 
