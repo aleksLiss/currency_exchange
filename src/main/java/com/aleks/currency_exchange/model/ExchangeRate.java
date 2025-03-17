@@ -1,5 +1,6 @@
 package com.aleks.currency_exchange.model;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 public class ExchangeRate {
@@ -7,16 +8,16 @@ public class ExchangeRate {
     private int id;
     private int baseCurrencyId;
     private int targetCurrencyId;
-    private double rate;
+    private BigDecimal rate;
 
-    public ExchangeRate(int id, int baseCurrencyId, int targetCurrencyId, double rate) {
+    public ExchangeRate(int id, int baseCurrencyId, int targetCurrencyId, BigDecimal rate) {
         this.id = id;
         this.baseCurrencyId = baseCurrencyId;
         this.targetCurrencyId = targetCurrencyId;
         this.rate = rate;
     }
 
-    public ExchangeRate(int baseCurrencyId, int targetCurrencyId, double rate) {
+    public ExchangeRate(int baseCurrencyId, int targetCurrencyId, BigDecimal rate) {
         this.baseCurrencyId = baseCurrencyId;
         this.targetCurrencyId = targetCurrencyId;
         this.rate = rate;
@@ -49,11 +50,12 @@ public class ExchangeRate {
         this.targetCurrencyId = targetCurrencyId;
     }
 
-    public double getRate() {
+
+    public BigDecimal getRate() {
         return rate;
     }
 
-    public void setRate(double rate) {
+    public void setRate(BigDecimal rate) {
         this.rate = rate;
     }
 
