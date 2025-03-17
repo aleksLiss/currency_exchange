@@ -44,7 +44,6 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements V
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
-            resp.setContentType("application/json;encoding=utf-8");
             try {
                 Collection<ExchangeRate> exchangeRates = exchangeRateService.findAll();
                 if (exchangeRates.isEmpty()) {
@@ -81,7 +80,6 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements V
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("application/json;encoding=utf-8");
                 Map<String, String> parameters = getParametersAsMap(req);
                 if (!isValidParameters(parameters)) {
                     exceptionView.setMessage("Fields: baseCurrencyCode, targetCurrencyCode, rate must be not empty and must be correct");
