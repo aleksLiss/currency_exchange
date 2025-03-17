@@ -100,6 +100,11 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements V
                     resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
+                if (Double.parseDouble(rate) <= 0) {
+                    exceptionView.setMessage("Input rate must be great than zero");
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    return;
+                }
                 Optional<ExchangeRate> savedExchangeRate = exchangeRateService.save(
                         new ExchangeRate(
                                 foundBaseCurrency.get().getId(),
