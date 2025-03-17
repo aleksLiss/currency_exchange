@@ -22,12 +22,10 @@ import java.util.*;
 public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Validator {
 
     private CurrencyService currencyService;
-    private CurrencyRepository currencyRepository;
     private ExceptionView exceptionView;
     @Override
     public void init(ServletConfig config) {
-        currencyRepository = new SqliteCurrencyRepository();
-        currencyService = new CurrencyService(currencyRepository);
+        currencyService = new CurrencyService(new SqliteCurrencyRepository());
         exceptionView = new ExceptionView();
     }
 
