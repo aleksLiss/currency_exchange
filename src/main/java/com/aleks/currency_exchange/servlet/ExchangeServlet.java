@@ -30,7 +30,6 @@ public class ExchangeServlet extends HttpServlet implements Validator {
 
     // todo review GET /exchange?from=BASE_CURRENCY_CODE&to=TARGET_CURRENCY_CODE&amount=$AMOUNT #
     // todo deploy
-    // todo добавить проверку на отрицательные значения валюты
 
     @Override
     public void init(ServletConfig config) {
@@ -61,14 +60,19 @@ public class ExchangeServlet extends HttpServlet implements Validator {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
+                if (amount < 0) {
+                    exceptionView.setMessage("Input rate must be great than zero");
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    return;
+                }
                 Optional<ExchangeRate> dirExRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
                 if (dirExRate.isPresent()) {
                     ExchangeView exchangeView = new ExchangeView(
-                        baseCurrency.get(),
-                        targetCurrency.get(),
-                        dirExRate.get().getRate(),
-                        amount,
-                        dirExRate.get().getRate().doubleValue() * amount
+                            baseCurrency.get(),
+                            targetCurrency.get(),
+                            dirExRate.get().getRate(),
+                            amount,
+                            dirExRate.get().getRate().doubleValue() * amount
                     );
                     writer.println(new GsonBuilder().create().toJson(exchangeView));
                     return;
