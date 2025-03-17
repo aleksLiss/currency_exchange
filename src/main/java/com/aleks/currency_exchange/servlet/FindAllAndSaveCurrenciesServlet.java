@@ -35,7 +35,6 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Vali
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter writer = resp.getWriter()) {
             try {
-                resp.setContentType("application/json;encoding=utf-8");
                 Collection<Currency> currencies = currencyService.findAll();
                 if (currencies.isEmpty()) {
                     exceptionView.setMessage("Currencies not found");
