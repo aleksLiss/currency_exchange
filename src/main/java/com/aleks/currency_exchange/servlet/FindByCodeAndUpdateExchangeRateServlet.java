@@ -10,17 +10,21 @@ import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 //      http://localhost:8080/currency_exchange/exchangeRate/usdeur
-//      http://localhost:8080/currency_exchange/exchangeRate/usereur?rate=1000.00
 
 @WebServlet("/exchangeRate/*")
 public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
@@ -86,19 +90,18 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!"PATCH".equalsIgnoreCase(req.getMethod())) {
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method not allowed");
+            return;
+        }
         try (PrintWriter writer = resp.getWriter()) {
             try {
                 String path = req.getPathInfo();
                 String[] arrOfPath = path.split("/");
-                String rate = req.getParameter("rate");
+                String rate = getParametersAsMap(req).getOrDefault("rate", null);
                 if (arrOfPath.length == 0) {
                     exceptionView.setMessage("Empty codes of currencies");
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
-                    return;
-                }
-                if (rate == null || rate.isEmpty()) {
-                    exceptionView.setMessage("Empty field 'rate'");
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
@@ -116,6 +119,16 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
                 if (!foundExchangeRate.isPresent()) {
                     exceptionView.setMessage("Exchange rate not found");
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
+                    return;
+                }
+                if (rate == null || rate.isEmpty()) {
+                    exceptionView.setMessage("Empty field rate");
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
+                    return;
+                }
+                if (!isNumber(rate)) {
+                    exceptionView.setMessage("Input rate must be a number");
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 if (Double.parseDouble(rate) <= 0) {
@@ -151,4 +164,36 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet {
             e.printStackTrace();
         }
     }
+
+    private Map<String, String> getParametersAsMap(HttpServletRequest request) {
+        StringBuilder jsonBuilder = new StringBuilder();
+        Map<String, String> parameters = new HashMap<>();
+        try (BufferedReader reader = request.getReader()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonBuilder.append(line);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        String[] keyVal = jsonBuilder.toString().split("=");
+        String key = jsonBuilder.toString().split("=")[0];
+        String value = null;
+        if (keyVal.length == 2) {
+            value = jsonBuilder.toString().split("=")[1];
+        }
+        parameters.put(key, value);
+        return parameters;
+    }
+
+    private boolean isNumber(String rate) {
+        boolean isNumber = true;
+        try {
+            BigDecimal.valueOf(Double.parseDouble(rate));
+        } catch (Exception ex) {
+            isNumber = false;
+        }
+        return isNumber;
+    }
+
 }
