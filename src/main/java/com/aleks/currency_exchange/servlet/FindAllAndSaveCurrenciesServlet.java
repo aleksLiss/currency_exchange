@@ -1,10 +1,9 @@
 package com.aleks.currency_exchange.servlet;
 
 import com.aleks.currency_exchange.model.Currency;
-import com.aleks.currency_exchange.repository.CurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
-import com.aleks.currency_exchange.validator.Validator;
+import com.aleks.currency_exchange.validator.ParametersValidator;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
@@ -19,7 +18,7 @@ import java.util.*;
 // http://localhost:8080/currency_exchange/currencies
 
 @WebServlet("/currencies")
-public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Validator {
+public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements ParametersValidator {
 
     private CurrencyService currencyService;
     private ExceptionView exceptionView;

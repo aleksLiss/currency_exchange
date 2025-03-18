@@ -1,5 +1,7 @@
 package com.aleks.currency_exchange.servlet;
 
+import com.aleks.currency_exchange.validator.ParametersValidator;
+import com.aleks.currency_exchange.validator.RateValidator;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
@@ -8,7 +10,6 @@ import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteExchangeRateRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.service.ExchangeRateService;
-import com.aleks.currency_exchange.validator.Validator;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,7 +24,7 @@ import java.util.*;
 // http://localhost:8080/currency_exchange/exchangeRates
 
 @WebServlet("/exchangeRates")
-public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements Validator {
+public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements ParametersValidator, RateValidator {
 
     private ExchangeRateService exchangeRateService;
     private CurrencyService currencyService;
@@ -100,6 +101,11 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements V
                     resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
+                if (!isNumber(rate)) {
+                    exceptionView.setMessage("Input rate must be a number");
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    return;
+                }
                 if (Double.parseDouble(rate) <= 0) {
                     exceptionView.setMessage("Input rate must be great than zero");
                     resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
@@ -153,5 +159,16 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements V
             parameters.put(entry.getKey(), entry.getValue()[0]);
         }
         return parameters;
+    }
+
+    @Override
+    public boolean isNumber(String rate) {
+        boolean isNumber = true;
+        try {
+            BigDecimal.valueOf(Double.parseDouble(rate));
+        } catch (Exception ex) {
+            isNumber = false;
+        }
+        return isNumber;
     }
 }
