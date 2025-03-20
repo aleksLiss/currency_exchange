@@ -1,7 +1,7 @@
 package com.aleks.currency_exchange.servlet;
 
 import com.aleks.currency_exchange.validator.ParametersValidator;
-import com.aleks.currency_exchange.validator.RateValidator;
+import com.aleks.currency_exchange.validator.NumberParametersValidator;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
@@ -24,7 +24,7 @@ import java.util.*;
 // http://localhost:8080/currency_exchange/exchangeRates
 
 @WebServlet("/exchangeRates")
-public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements ParametersValidator, RateValidator {
+public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements ParametersValidator, NumberParametersValidator {
 
     private ExchangeRateService exchangeRateService;
     private CurrencyService currencyService;
@@ -128,7 +128,7 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                         foundTargetCurrency.get(),
                         savedExchangeRate.get().getRate()
                 );
-
+                resp.setStatus(HttpServletResponse.SC_CREATED);
                 writer.println(new GsonBuilder().create().toJson(exchangeRateView));
             } catch (Exception ex) {
                 exceptionView.setMessage("Incorrect fields of parameters");
@@ -162,10 +162,10 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
     }
 
     @Override
-    public boolean isNumber(String rate) {
+    public boolean isNumber(String number) {
         boolean isNumber = true;
         try {
-            BigDecimal.valueOf(Double.parseDouble(rate));
+            BigDecimal.valueOf(Double.parseDouble(number));
         } catch (Exception ex) {
             isNumber = false;
         }

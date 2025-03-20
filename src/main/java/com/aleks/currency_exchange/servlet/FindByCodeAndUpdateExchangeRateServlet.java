@@ -1,6 +1,6 @@
 package com.aleks.currency_exchange.servlet;
 
-import com.aleks.currency_exchange.validator.RateValidator;
+import com.aleks.currency_exchange.validator.NumberParametersValidator;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
@@ -28,7 +28,7 @@ import java.util.Optional;
 //      http://localhost:8080/currency_exchange/exchangeRate/usdeur
 
 @WebServlet("/exchangeRate/*")
-public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implements RateValidator {
+public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implements NumberParametersValidator {
 
     private ExchangeRateService exchangeRateService;
     private CurrencyService currencyService;
@@ -188,10 +188,10 @@ public class FindByCodeAndUpdateExchangeRateServlet extends HttpServlet implemen
     }
 
     @Override
-    public boolean isNumber(String rate) {
+    public boolean isNumber(String number) {
         boolean isNumber = true;
         try {
-            BigDecimal.valueOf(Double.parseDouble(rate));
+            BigDecimal.valueOf(Double.parseDouble(number));
         } catch (Exception ex) {
             isNumber = false;
         }
