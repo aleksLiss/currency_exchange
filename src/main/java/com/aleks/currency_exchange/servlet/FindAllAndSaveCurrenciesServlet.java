@@ -72,6 +72,7 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Para
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
+                resp.setStatus(HttpServletResponse.SC_CREATED);
                 writer.println(new GsonBuilder().create().toJson(savedCurrency.get()));
             } catch (Exception ex) {
                 exceptionView.setMessage("Internal error");
