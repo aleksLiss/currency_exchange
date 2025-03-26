@@ -1,9 +1,9 @@
 package com.aleks.currency_exchange.servlet;
 
 import com.aleks.currency_exchange.model.Currency;
-import com.aleks.currency_exchange.repository.CurrencyRepository;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
+import com.aleks.currency_exchange.view.CurrencyView;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
@@ -36,20 +36,28 @@ public class FindByCodeCurrencyServlet extends HttpServlet {
                 String pathInfo = req.getPathInfo();
                 if (pathInfo.split("/").length < 1) {
                     exceptionView.setMessage("Currency field must contains codeCurrency");
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 String codeCurrency = req.getPathInfo().split("/")[1].toUpperCase();
                 Optional<Currency> currency = currencyService.findByCode(codeCurrency);
                 if (!currency.isPresent()) {
                     exceptionView.setMessage("Currency not found");
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
-                writer.println(new GsonBuilder().create().toJson(currency.get()));
+                writer.println(new GsonBuilder().create().toJson(new CurrencyView(
+                        currency.get().getId(),
+                        currency.get().getFullName(),
+                        currency.get().getCode(),
+                        currency.get().getSign()
+                )));
             } catch (Exception ex) {
                 exceptionView.setMessage("Database not accessed");
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                writer.println(new GsonBuilder().create().toJson(exceptionView));
                 ex.printStackTrace();
             }
         } catch (Exception ex) {
