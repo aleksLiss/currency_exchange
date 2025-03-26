@@ -4,6 +4,7 @@ import com.aleks.currency_exchange.model.Currency;
 import com.aleks.currency_exchange.repository.SqliteCurrencyRepository;
 import com.aleks.currency_exchange.service.CurrencyService;
 import com.aleks.currency_exchange.validator.ParametersValidator;
+import com.aleks.currency_exchange.view.CurrencyView;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletConfig;
@@ -14,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 // http://localhost:8080/currency_exchange/currencies
 
@@ -35,13 +37,26 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Para
                 Collection<Currency> currencies = currencyService.findAll();
                 if (currencies.isEmpty()) {
                     exceptionView.setMessage("Currencies not found");
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
-                writer.println(new GsonBuilder().create().toJson(currencies));
+                Collection<CurrencyView> currencyViews = currencies
+                        .stream()
+                                .map(currency -> {
+                                    return new CurrencyView(
+                                            currency.getId(),
+                                            currency.getFullName(),
+                                            currency.getCode(),
+                                            currency.getSign()
+                                    );
+                                })
+                                        .collect(Collectors.toList());
+                writer.println(new GsonBuilder().create().toJson(currencyViews));
             } catch (Exception ex) {
                 exceptionView.setMessage("Internal error");
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                writer.println(new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -55,7 +70,8 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Para
                 Map<String, String> parametersMap = getPararametersAsMap(req);
                 if (!isValidParameters(parametersMap)) {
                     exceptionView.setMessage("Fields: name, code, sign must be not empty and must be correct");
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 String code = parametersMap.getOrDefault("code", null);
@@ -63,20 +79,23 @@ public class FindAllAndSaveCurrenciesServlet extends HttpServlet implements Para
                 String sign = parametersMap.getOrDefault("sign", null);
                 if (currencyService.findByCode(code).isPresent()) {
                     exceptionView.setMessage("This currency already exist");
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<Currency> savedCurrency = currencyService.save(new Currency(code, name, sign));
                 if (!savedCurrency.isPresent()) {
                     exceptionView.setMessage("Error save currency into database");
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 resp.setStatus(HttpServletResponse.SC_CREATED);
                 writer.println(new GsonBuilder().create().toJson(savedCurrency.get()));
             } catch (Exception ex) {
                 exceptionView.setMessage("Internal error");
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                writer.println(new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
