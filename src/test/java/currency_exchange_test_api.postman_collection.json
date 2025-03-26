@@ -1,0 +1,932 @@
+{
+	"info": {
+		"_postman_id": "b7720c3f-b25a-4126-9fce-8e85fd30f8c9",
+		"name": "currency_exchange_test_api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43476258",
+		"_collection_link": "https://aleksliss.postman.co/workspace/Aleks-Liss's-Workspace~4ec26fc8-46d3-4776-8e0e-e05f9e5257d5/collection/43476258-b7720c3f-b25a-4126-9fce-8e85fd30f8c9?action=share&source=collection_link&creator=43476258"
+	},
+	"item": [
+		{
+			"name": "get all currencies",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currencies",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currencies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get currency by code then ok",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currency/eur",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currency",
+						"eur"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCurrencyWithEmptyFieldThenGetBadRequest",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currency/",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currency",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCurrencyWithNotExistCodeThenNotFound",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currency/currnotexist",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currency",
+						"currnotexist"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSaveCurrWithEmptyFieldsThenBadRequest",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "",
+							"type": "text"
+						},
+						{
+							"key": "sign",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currencies",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currencies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSaveCurrThenWasSavedThenConflict",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "us dollar",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "usd",
+							"type": "text"
+						},
+						{
+							"key": "sign",
+							"value": "US",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currencies",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currencies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSavedCurrencyThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "new currency",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "CURRR",
+							"type": "text"
+						},
+						{
+							"key": "sign",
+							"value": "CR",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/currencies",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"currencies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenGetAllExchangeRatesThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRates",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenGetExchangeRateWithEmptyFieldThenBadRequest",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenGetExRateWithNotExistsCodesThenNotFound",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/wefwefwefwef",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						"wefwefwefwef"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenGetExRateThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/usdrub",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						"usdrub"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSaveExRateWithEmptyFieldsThenThrowBadReq",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "baseCurrencyCode",
+							"value": "",
+							"type": "text"
+						},
+						{
+							"key": "targetCurrencyCode",
+							"value": "",
+							"type": "text"
+						},
+						{
+							"key": "rate",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRates",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSaveExRateWithIncorrectCodesThenThrowNotFound",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "baseCurrencyCode",
+							"value": "wefwef",
+							"type": "text"
+						},
+						{
+							"key": "targetCurrencyCode",
+							"value": "2ere2r",
+							"type": "text"
+						},
+						{
+							"key": "rate",
+							"value": "22",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRates",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSaveExRateWithSavedCodesThenThrowConflict",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "baseCurrencyCode",
+							"value": "usd",
+							"type": "text"
+						},
+						{
+							"key": "targetCurrencyCode",
+							"value": "eur",
+							"type": "text"
+						},
+						{
+							"key": "rate",
+							"value": "22",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRates",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenSaveExRateThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "baseCurrencyCode",
+							"value": "cad",
+							"type": "text"
+						},
+						{
+							"key": "targetCurrencyCode",
+							"value": "byn",
+							"type": "text"
+						},
+						{
+							"key": "rate",
+							"value": "100",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRates",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenUpdExRateWithEmptyCodesThenThrownBadReq",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "rate",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenUpdExRateWithEmptyFieldRateThenThrownBadReq",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "rate",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/usdeur",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						"usdeur"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenUpdExRateWithIncorrectCodesThenThrownNotFound",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "rate",
+							"value": "22",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/wefwefwef",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						"wefwefwef"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenUpdExRateThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "rate",
+							"value": "333",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchangeRate/usdeur",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchangeRate",
+						"usdeur"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenExchangeWithEmptyFieldsThenThrowBadReq",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchange?from&to&amount",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": null
+						},
+						{
+							"key": "to",
+							"value": null
+						},
+						{
+							"key": "amount",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenExchangeWithIncorrectCodesThenThrownBadReq",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchange?from=uhdiwde&to=pefoij&amount=222",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "uhdiwde"
+						},
+						{
+							"key": "to",
+							"value": "pefoij"
+						},
+						{
+							"key": "amount",
+							"value": "222"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenExchangeAndAmountNotWasANumberThenThrownConflict",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchange?from=usd&to=eur&amount=ef2f2f",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "usd"
+						},
+						{
+							"key": "to",
+							"value": "eur"
+						},
+						{
+							"key": "amount",
+							"value": "ef2f2f"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenExchangeWithAmountThatLessThanZeroThenThrowConflict",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchange?from=usd&to=rub&amount=-222",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "usd"
+						},
+						{
+							"key": "to",
+							"value": "rub"
+						},
+						{
+							"key": "amount",
+							"value": "-222"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenExchangeThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchange?from=usd&to=rub&amount=100",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "usd"
+						},
+						{
+							"key": "to",
+							"value": "rub"
+						},
+						{
+							"key": "amount",
+							"value": "100"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "whenExchangeThenOk",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://78.140.252.55:8080/currency_exchange/exchange?from=cny&to=byn&amount=123",
+					"protocol": "http",
+					"host": [
+						"78",
+						"140",
+						"252",
+						"55"
+					],
+					"port": "8080",
+					"path": [
+						"currency_exchange",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "cny"
+						},
+						{
+							"key": "to",
+							"value": "byn"
+						},
+						{
+							"key": "amount",
+							"value": "123"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
