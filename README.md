@@ -1,7 +1,9 @@
 # Проект “Обмен валют” 
 ____
 Проект реализован в рамках Java Роадмап Сергея Жукова
+
 Задание доступно по ссылке: 
+
 https://zhukovsd.github.io/java-backend-learning-course/projects/currency-exchange/
 ____
 REST API для описания валют и обменных курсов. 
