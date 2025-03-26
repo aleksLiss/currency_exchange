@@ -2,6 +2,7 @@ package com.aleks.currency_exchange.servlet;
 
 import com.aleks.currency_exchange.validator.ParametersValidator;
 import com.aleks.currency_exchange.validator.NumberParametersValidator;
+import com.aleks.currency_exchange.view.CurrencyView;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeRateView;
 import com.aleks.currency_exchange.model.Currency;
@@ -44,7 +45,8 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                 Collection<ExchangeRate> exchangeRates = exchangeRateService.findAll();
                 if (exchangeRates.isEmpty()) {
                     exceptionView.setMessage("Exchange rates not found");
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 List<ExchangeRateView> exchangeRateViews = new ArrayList<>();
@@ -55,8 +57,18 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                         exchangeRateViews.add(
                                 new ExchangeRateView(
                                         exchangeRate.getId(),
-                                        currencyService.findById(exchangeRate.getBaseCurrencyId()).get(),
-                                        currencyService.findById(exchangeRate.getTargetCurrencyId()).get(),
+                                        new CurrencyView(
+                                                foundBaseCurr.get().getId(),
+                                                foundBaseCurr.get().getFullName(),
+                                                foundBaseCurr.get().getCode(),
+                                                foundBaseCurr.get().getSign()
+                                        ),
+                                        new CurrencyView(
+                                                foundTargCurr.get().getId(),
+                                                foundTargCurr.get().getFullName(),
+                                                foundTargCurr.get().getCode(),
+                                                foundTargCurr.get().getSign()
+                                        ),
                                         exchangeRate.getRate()
                                 )
                         );
@@ -65,7 +77,8 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                 writer.println(new GsonBuilder().create().toJson(exchangeRateViews));
             } catch (Exception ex) {
                 exceptionView.setMessage("Internal error");
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                writer.println(new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -79,18 +92,19 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                 Map<String, String> parameters = getParametersAsMap(req);
                 if (!isValidParameters(parameters)) {
                     exceptionView.setMessage("Fields: baseCurrencyCode, targetCurrencyCode, rate must be not empty and must be correct");
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
-                String baseCurrencyCode = parameters.getOrDefault("targetCurrencyCode", null);
+                String baseCurrencyCode = parameters.getOrDefault("baseCurrencyCode", null);
                 String targetCurrencyCode = parameters.getOrDefault("targetCurrencyCode", null);
                 String rate = parameters.getOrDefault("rate", null);
                 Optional<Currency> foundBaseCurrency = currencyService.findByCode(baseCurrencyCode.toUpperCase());
                 Optional<Currency> foundTargetCurrency = currencyService.findByCode(targetCurrencyCode.toUpperCase());
                 if (!foundTargetCurrency.isPresent() || !foundBaseCurrency.isPresent()) {
                     exceptionView.setMessage("Base currency or target currency not found");
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> foundExchangeRate = exchangeRateService.findByCode(
@@ -98,17 +112,20 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                         foundTargetCurrency.get().getId());
                 if (foundExchangeRate.isPresent()) {
                     exceptionView.setMessage("Input exchange rate already exist");
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 if (!isNumber(rate)) {
                     exceptionView.setMessage("Input rate must be a number");
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 if (Double.parseDouble(rate) <= 0) {
                     exceptionView.setMessage("Input rate must be great than zero");
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> savedExchangeRate = exchangeRateService.save(
@@ -116,23 +133,35 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
                                 foundBaseCurrency.get().getId(),
                                 foundTargetCurrency.get().getId(),
                                 BigDecimal.valueOf(Double.parseDouble(rate))
-                ));
+                        ));
                 if (!savedExchangeRate.isPresent()) {
                     exceptionView.setMessage("Error save exchange rate into database");
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 ExchangeRateView exchangeRateView = new ExchangeRateView(
                         savedExchangeRate.get().getId(),
-                        foundBaseCurrency.get(),
-                        foundTargetCurrency.get(),
+                        new CurrencyView(
+                            foundBaseCurrency.get().getId(),
+                            foundBaseCurrency.get().getFullName(),
+                            foundBaseCurrency.get().getCode(),
+                            foundBaseCurrency.get().getSign()
+                        ),
+                        new CurrencyView(
+                                foundTargetCurrency.get().getId(),
+                                foundTargetCurrency.get().getFullName(),
+                                foundTargetCurrency.get().getCode(),
+                                foundTargetCurrency.get().getSign()
+                        ),
                         savedExchangeRate.get().getRate()
                 );
                 resp.setStatus(HttpServletResponse.SC_CREATED);
                 writer.println(new GsonBuilder().create().toJson(exchangeRateView));
             } catch (Exception ex) {
                 exceptionView.setMessage("Incorrect fields of parameters");
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, new GsonBuilder().create().toJson(exceptionView));
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                writer.println(new GsonBuilder().create().toJson(exceptionView));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -155,7 +184,7 @@ public class FindAllAndSaveExchangeRatesServlet extends HttpServlet implements P
 
     private Map<String, String> getParametersAsMap(HttpServletRequest request) {
         Map<String, String> parameters = new HashMap<>();
-        for(Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             parameters.put(entry.getKey(), entry.getValue()[0]);
         }
         return parameters;
