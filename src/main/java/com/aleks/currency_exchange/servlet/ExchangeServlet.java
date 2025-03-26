@@ -2,6 +2,7 @@ package com.aleks.currency_exchange.servlet;
 
 import com.aleks.currency_exchange.validator.NumberParametersValidator;
 import com.aleks.currency_exchange.validator.ParametersValidator;
+import com.aleks.currency_exchange.view.CurrencyView;
 import com.aleks.currency_exchange.view.ExceptionView;
 import com.aleks.currency_exchange.view.ExchangeView;
 import com.aleks.currency_exchange.model.Currency;
@@ -46,20 +47,21 @@ public class ExchangeServlet extends HttpServlet implements ParametersValidator,
                 Map<String, String> parameters = getParametersAsMap(req.getParameterMap());
                 if (!isValidParameters(parameters)) {
                     exceptionView.setMessage("Fields: from, to, amount must be not empty and must be correct");
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            new GsonBuilder().create().toJson(exceptionView)
-                    );
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 if (!isNumber(parameters.getOrDefault("amount", null))) {
                     exceptionView.setMessage("Parameter amount must be a number");
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 double amount = Double.parseDouble(parameters.getOrDefault("amount", String.valueOf(0.0)));
                 if (amount < 0) {
                     exceptionView.setMessage("Parameter amount must be great than zero");
-                    resp.sendError(HttpServletResponse.SC_CONFLICT, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<Currency> baseCurrency = currencyService.findByCode(
@@ -68,14 +70,25 @@ public class ExchangeServlet extends HttpServlet implements ParametersValidator,
                         parameters.get("to").toUpperCase());
                 if (!baseCurrency.isPresent() || !targetCurrency.isPresent()) {
                     exceptionView.setMessage("Currencies with input codes not found");
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    writer.println(new GsonBuilder().create().toJson(exceptionView));
                     return;
                 }
                 Optional<ExchangeRate> dirExRate = exchangeRateService.findByCode(baseCurrency.get().getId(), targetCurrency.get().getId());
                 if (dirExRate.isPresent()) {
                     ExchangeView exchangeView = new ExchangeView(
-                            baseCurrency.get(),
-                            targetCurrency.get(),
+                            new CurrencyView(
+                                baseCurrency.get().getId(),
+                                baseCurrency.get().getFullName(),
+                                baseCurrency.get().getCode(),
+                                baseCurrency.get().getSign()
+                            ),
+                            new CurrencyView(
+                                targetCurrency.get().getId(),
+                                targetCurrency.get().getFullName(),
+                                targetCurrency.get().getCode(),
+                                targetCurrency.get().getSign()
+                            ),
                             dirExRate.get().getRate(),
                             amount,
                             dirExRate.get().getRate().multiply(BigDecimal.valueOf(amount))
@@ -86,8 +99,18 @@ public class ExchangeServlet extends HttpServlet implements ParametersValidator,
                 Optional<ExchangeRate> backExRate = exchangeRateService.findByCode(targetCurrency.get().getId(), baseCurrency.get().getId());
                 if (backExRate.isPresent()) {
                     ExchangeView exchangeView = new ExchangeView(
-                            targetCurrency.get(),
-                            baseCurrency.get(),
+                            new CurrencyView(
+                                targetCurrency.get().getId(),
+                                targetCurrency.get().getFullName(),
+                                targetCurrency.get().getCode(),
+                                targetCurrency.get().getSign()
+                            ),
+                            new CurrencyView(
+                                baseCurrency.get().getId(),
+                                baseCurrency.get().getFullName(),
+                                baseCurrency.get().getCode(),
+                                baseCurrency.get().getSign()
+                            ),
                             backExRate.get().getRate(),
                             amount,
                             backExRate.get().getRate().multiply(BigDecimal.valueOf(amount))
@@ -99,8 +122,18 @@ public class ExchangeServlet extends HttpServlet implements ParametersValidator,
                 if (exchangeRates.length == 2) {
                     BigDecimal rate = exchangeRates[1].getRate().divide(exchangeRates[0].getRate(), 2, RoundingMode.HALF_EVEN);
                     ExchangeView exchangeView = new ExchangeView(
-                            baseCurrency.get(),
-                            targetCurrency.get(),
+                            new CurrencyView(
+                                baseCurrency.get().getId(),
+                                baseCurrency.get().getFullName(),
+                                baseCurrency.get().getCode(),
+                                baseCurrency.get().getSign()
+                            ),
+                            new CurrencyView(
+                                targetCurrency.get().getId(),
+                                targetCurrency.get().getFullName(),
+                                targetCurrency.get().getCode(),
+                                targetCurrency.get().getSign()
+                            ),
                             rate,
                             amount,
                             rate.multiply(BigDecimal.valueOf(amount))
@@ -109,7 +142,8 @@ public class ExchangeServlet extends HttpServlet implements ParametersValidator,
                     return;
                 }
                 exceptionView.setMessage("Database not contains needed exchange rate");
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new GsonBuilder().create().toJson(exceptionView));
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                writer.println(new GsonBuilder().create().toJson(exceptionView));
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
